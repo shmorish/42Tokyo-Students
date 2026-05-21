@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:api.intra.42.fr)",
+      "Bash(npm install *)"
+    ]
+  }
+}
