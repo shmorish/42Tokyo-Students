@@ -1,0 +1,351 @@
+.state-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 4rem 0;
+  color: var(--text-dim);
+}
+
+.state-box.error { color: #f87171; }
+
+.state-box button {
+  padding: 0.45rem 1.4rem;
+  background: var(--primary);
+  color: #000;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid var(--border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.75s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── layout ─────────────────────────────────────────── */
+.ranking-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* ── filter bar ──────────────────────────────────────── */
+.filter-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.85rem 1.2rem;
+}
+
+.filter-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  cursor: pointer;
+  font-size: 0.88rem;
+  color: var(--text);
+  white-space: nowrap;
+  user-select: none;
+}
+
+.toggle-label input[type="checkbox"] {
+  accent-color: var(--primary);
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
+}
+
+.badge {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  font-size: 0.72rem;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+.filter-select {
+  background: var(--surface2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 0.38rem 0.7rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.12s;
+}
+
+.filter-select:focus,
+.filter-select:hover {
+  border-color: var(--primary);
+}
+
+.clear-btn {
+  background: transparent;
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 0.35rem 0.85rem;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: color 0.12s, border-color 0.12s;
+}
+
+.clear-btn:hover {
+  color: #f87171;
+  border-color: #f87171;
+}
+
+.filter-count {
+  font-size: 0.82rem;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+/* ── table card ──────────────────────────────────────── */
+.table-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.ranking-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.ranking-table thead {
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+}
+
+.ranking-table th {
+  padding: 0.8rem 1.2rem;
+  text-align: left;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.ranking-table td {
+  padding: 0.75rem 1.2rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+.ranking-table tbody tr:last-child td { border-bottom: none; }
+
+.ranking-table tbody tr { transition: background 0.12s; }
+
+.ranking-table tbody tr:hover { background: var(--surface2); }
+
+.ranking-table tbody tr.top3 {
+  background: rgba(0, 186, 188, 0.05);
+}
+
+.col-rank  { width: 72px; }
+.col-level { width: 210px; }
+
+/* ── rank cell ───────────────────────────────────────── */
+.td-rank { text-align: center; }
+
+.medal { font-size: 1.35rem; line-height: 1; }
+
+.rank-num {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-dim);
+}
+
+/* ── user cell ───────────────────────────────────────── */
+.td-user {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.avatar,
+.avatar-placeholder {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  border: 2px solid var(--border);
+}
+
+.avatar { object-fit: cover; }
+
+.avatar-placeholder { background: var(--surface2); }
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.login {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-decoration: none;
+}
+
+.login:hover {
+  color: var(--primary);
+  text-decoration: underline;
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+}
+
+.end-date {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+}
+
+.end-date.bh-warning {
+  color: #fbbf24;
+}
+
+.end-date.bh-danger {
+  color: #f87171;
+}
+
+.end-date.bh-overdue {
+  color: #9ca3af;
+  text-decoration: line-through;
+}
+
+.days-remaining {
+  font-weight: 600;
+}
+
+.loading-date {
+  opacity: 0.4;
+  font-style: italic;
+}
+
+.status-tag {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+}
+
+.status-blackholed {
+  background: rgba(248, 113, 113, 0.15);
+  color: #f87171;
+  border: 1px solid rgba(248, 113, 113, 0.3);
+}
+
+.status-alumni {
+  background: rgba(251, 191, 36, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(251, 191, 36, 0.3);
+}
+
+/* ── level cell ──────────────────────────────────────── */
+.level-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.level-number {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--primary);
+  min-width: 28px;
+  text-align: right;
+}
+
+.level-bar-wrap {
+  flex: 1;
+  height: 6px;
+  background: var(--border);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.level-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #00babc, #7c3aed);
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+.level-pct {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  min-width: 42px;
+  text-align: right;
+}
+
+/* ── pagination ──────────────────────────────────────── */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+}
+
+.page-btn {
+  padding: 0.45rem 1.2rem;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.88rem;
+  transition: border-color 0.12s, color 0.12s;
+}
+
+.page-btn:hover:not(:disabled) {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.page-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.page-info {
+  font-size: 0.88rem;
+  color: var(--text-dim);
+}
