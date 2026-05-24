@@ -1,8 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import './RankingTable.css'
 
-const PAGE_SIZE = 50
-
 const MONTH_ORDER = [
   'january','february','march','april','may','june',
   'july','august','september','october','november','december',
@@ -60,13 +58,6 @@ function daysUntil(dateStr) {
   return Math.ceil(diff / (1000 * 60 * 60 * 24))
 }
 
-function alumniDeadline(markedAt) {
-  if (!markedAt) return null
-  const d = new Date(markedAt)
-  d.setMonth(d.getMonth() + 8)
-  return d.toISOString()
-}
-
 function bhUrgency(days) {
   if (days === null) return ''
   if (days < 0)  return 'bh-overdue'
@@ -100,7 +91,7 @@ export default function RankingTable() {
   const [allData, setAllData] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [page, setPage] = useState(1)
+  const [search, setSearch] = useState('')
 
   const [filters, setFilters] = useState({
     status: '',
@@ -108,33 +99,12 @@ export default function RankingTable() {
     piscineMonth: '',
     beginYear: '',
   })
-  const [lastProjectDates, setLastProjectDates] = useState({})
 
   useEffect(() => {
     fetchAllPages()
       .then(data => { setAllData(data); setLoading(false) })
       .catch(err => { setError(err.message); setLoading(false) })
   }, [])
-
-  // Reset to page 1 when filters change
-  useEffect(() => { setPage(1) }, [filters])
-
-  // 表示中のアクティブユーザーの最終プロジェクト日を非同期取得
-  useEffect(() => {
-    const unloaded = pageData
-      .filter(cu => getStatus(cu) === 'active' && cu.user?.id && !(cu.user.id in lastProjectDates))
-      .map(cu => cu.user.id)
-    if (unloaded.length === 0) return
-
-    fetch('/api/last-projects', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userIds: unloaded }),
-    })
-      .then(r => r.json())
-      .then(dates => setLastProjectDates(prev => ({ ...prev, ...dates })))
-      .catch(console.error)
-  }, [page, filters, allData])
 
   // Derive dropdown options from loaded data
   const piscineYears = useMemo(() =>
@@ -162,13 +132,10 @@ export default function RankingTable() {
       if (filters.beginYear && entry.begin_at) {
         if (new Date(entry.begin_at).getFullYear() !== parseInt(filters.beginYear)) return false
       }
+      if (search && !entry.user?.login?.toLowerCase().includes(search.toLowerCase())) return false
       return true
     })
-  }, [allData, filters])
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
-  const pageData = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
-  const rankOffset = (page - 1) * PAGE_SIZE
+  }, [allData, filters, search])
 
   const statusCounts = useMemo(() => {
     const counts = { active: 0, alumni: 0, blackholed: 0 }
@@ -176,7 +143,7 @@ export default function RankingTable() {
     return counts
   }, [allData])
 
-  const hasFilter = Object.values(filters).some(Boolean)
+  const hasFilter = Object.values(filters).some(Boolean) || !!search
 
   function setFilter(key, value) {
     setFilters(prev => ({ ...prev, [key]: value }))
@@ -184,6 +151,7 @@ export default function RankingTable() {
 
   function clearFilters() {
     setFilters({ status: '', piscineYear: '', piscineMonth: '', beginYear: '' })
+    setSearch('')
   }
 
   if (loading) {
@@ -211,6 +179,13 @@ export default function RankingTable() {
       {/* Filter bar */}
       <div className="filter-bar">
         <div className="filter-controls">
+          <input
+            type="text"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="ログインで検索..."
+            className="filter-input"
+          />
           <select
             value={filters.status}
             onChange={e => setFilter('status', e.target.value)}
@@ -285,8 +260,8 @@ export default function RankingTable() {
               </tr>
             </thead>
             <tbody>
-              {pageData.map((cu, i) => {
-                const rank = rankOffset + i + 1
+              {filtered.map((cu, i) => {
+                const rank = i + 1
                 const user = cu.user
                 const avatar =
                   user?.image?.versions?.small ||
@@ -328,37 +303,17 @@ export default function RankingTable() {
                             </span>
                           )}
                         </div>
-                        {status === 'active' && (() => {
-                          const bhDays = cu.blackholed_at ? daysUntil(cu.blackholed_at) : null
-                          const dateLoaded = user?.id in lastProjectDates
-                          const alumniDateStr = alumniDeadline(lastProjectDates[user?.id])
-                          const alumniDays = daysUntil(alumniDateStr)
+                        {status === 'active' && cu.blackholed_at && (() => {
+                          const bhDays = daysUntil(cu.blackholed_at)
                           return (
-                            <>
-                              {cu.blackholed_at && (
-                                <div className={`end-date ${bhUrgency(bhDays)}`}>
-                                  BH期限: {formatDate(cu.blackholed_at)}
-                                  {bhDays !== null && (
-                                    <span className="days-remaining">
-                                      {bhDays >= 0 ? ` (あと${bhDays}日)` : ` (${Math.abs(bhDays)}日超過)`}
-                                    </span>
-                                  )}
-                                </div>
+                            <div className={`end-date ${bhUrgency(bhDays)}`}>
+                              BH期限: {formatDate(cu.blackholed_at)}
+                              {bhDays !== null && (
+                                <span className="days-remaining">
+                                  {bhDays >= 0 ? ` (あと${bhDays}日)` : ` (${Math.abs(bhDays)}日超過)`}
+                                </span>
                               )}
-                              {!dateLoaded && (
-                                <div className="end-date loading-date">Alumni予定: 計算中…</div>
-                              )}
-                              {dateLoaded && alumniDateStr && (
-                                <div className={`end-date ${bhUrgency(alumniDays)}`}>
-                                  Alumni予定: {formatDate(alumniDateStr)}
-                                  {alumniDays !== null && (
-                                    <span className="days-remaining">
-                                      {alumniDays >= 0 ? ` (あと${alumniDays}日)` : ` (${Math.abs(alumniDays)}日超過)`}
-                                    </span>
-                                  )}
-                                </div>
-                              )}
-                            </>
+                            </div>
                           )
                         })()}
                         {status === 'alumni' && user?.alumnized_at && (
@@ -379,26 +334,6 @@ export default function RankingTable() {
         )}
       </div>
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="pagination">
-          <button
-            className="page-btn"
-            onClick={() => setPage(p => Math.max(1, p - 1))}
-            disabled={page === 1}
-          >
-            ← Prev
-          </button>
-          <span className="page-info">Page {page} / {totalPages}</span>
-          <button
-            className="page-btn"
-            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-            disabled={page === totalPages}
-          >
-            Next →
-          </button>
-        </div>
-      )}
     </div>
   )
 }

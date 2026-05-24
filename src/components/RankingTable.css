@@ -86,6 +86,27 @@
   font-weight: 600;
 }
 
+.filter-input {
+  background: var(--surface2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 0.38rem 0.7rem;
+  font-size: 0.85rem;
+  outline: none;
+  transition: border-color 0.12s;
+  min-width: 160px;
+}
+
+.filter-input::placeholder {
+  color: var(--text-dim);
+}
+
+.filter-input:focus,
+.filter-input:hover {
+  border-color: var(--primary);
+}
+
 .filter-select {
   background: var(--surface2);
   color: var(--text);

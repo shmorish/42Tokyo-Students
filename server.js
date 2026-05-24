@@ -39,92 +39,51 @@ async function getAccessToken() {
   return cachedToken
 }
 
-// ランキング取得
+const RANKING_TTL = 24 * 60 * 60 * 1000
+
+let rankingCache = { data: null, fetchedAt: 0 }
+
+async function refreshRankingCache(token) {
+  const all = []
+  let page = 1
+
+  while (true) {
+    const params = new URLSearchParams({
+      'filter[campus_id]': CAMPUS_ID,
+      'filter[cursus_id]': CURSUS_ID,
+      'sort': '-level',
+      'page[size]': '100',
+      'page[number]': String(page),
+    })
+    const res = await fetch(`https://api.intra.42.fr/v2/cursus_users?${params}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (!res.ok) throw new Error(`42 API responded with ${res.status}`)
+    const data = await res.json()
+    if (data.length === 0) break
+    all.push(...data)
+    const total = parseInt(res.headers.get('X-Total') || '0')
+    if (all.length >= total) break
+    page++
+  }
+
+  rankingCache = { data: all, fetchedAt: Date.now() }
+}
+
 app.get('/api/ranking', async (req, res) => {
   try {
     const page = Math.max(1, parseInt(req.query.page) || 1)
     const perPage = Math.min(100, Math.max(1, parseInt(req.query.perPage) || 50))
-    const token = await getAccessToken()
 
-    const url =
-      `https://api.intra.42.fr/v2/cursus_users` +
-      `?filter[campus_id]=${CAMPUS_ID}` +
-      `&filter[cursus_id]=${CURSUS_ID}` +
-      `&sort=-level` +
-      `&page[size]=${perPage}` +
-      `&page[number]=${page}`
-
-    const upstream = await fetch(url, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-
-    if (!upstream.ok) throw new Error(`42 API responded with ${upstream.status}`)
-
-    const xTotal = upstream.headers.get('X-Total')
-    const xPerPage = upstream.headers.get('X-Per-Page')
-    if (xTotal) res.setHeader('X-Total', xTotal)
-    if (xPerPage) res.setHeader('X-Per-Page', xPerPage)
-
-    res.json(await upstream.json())
-  } catch (err) {
-    console.error('[server]', err.message)
-    res.status(500).json({ error: err.message })
-  }
-})
-
-// 最終プロジェクト日取得（サーバー側キャッシュ付き）
-const lastProjectCache = new Map()
-
-app.post('/api/last-projects', async (req, res) => {
-  try {
-    const { userIds } = req.body
-    if (!Array.isArray(userIds)) return res.status(400).json({ error: 'userIds required' })
-
-    const result = {}
-    const toFetch = []
-
-    for (const id of userIds) {
-      if (lastProjectCache.has(id)) {
-        result[id] = lastProjectCache.get(id)
-      } else {
-        toFetch.push(id)
-      }
-    }
-
-    if (toFetch.length > 0) {
+    if (!rankingCache.data || Date.now() - rankingCache.fetchedAt > RANKING_TTL) {
       const token = await getAccessToken()
-      const BATCH = 3
-      const DELAY = 700
-
-      for (let i = 0; i < toFetch.length; i += BATCH) {
-        const batch = toFetch.slice(i, i + BATCH)
-        const batchResults = await Promise.all(
-          batch.map(async userId => {
-            try {
-              const r = await fetch(
-                `https://api.intra.42.fr/v2/users/${userId}/projects_users` +
-                `?filter[status]=finished&sort=-updated_at&page[size]=1`,
-                { headers: { Authorization: `Bearer ${token}` } }
-              )
-              const data = await r.json()
-              const markedAt = Array.isArray(data) && data.length > 0 ? data[0].marked_at : null
-              return { userId, markedAt }
-            } catch {
-              return { userId, markedAt: null }
-            }
-          })
-        )
-        for (const { userId, markedAt } of batchResults) {
-          lastProjectCache.set(userId, markedAt)
-          result[userId] = markedAt
-        }
-        if (i + BATCH < toFetch.length) {
-          await new Promise(r => setTimeout(r, DELAY))
-        }
-      }
+      await refreshRankingCache(token)
     }
 
-    res.json(result)
+    const start = (page - 1) * perPage
+    res.setHeader('X-Total', String(rankingCache.data.length))
+    res.setHeader('X-Per-Page', String(perPage))
+    res.json(rankingCache.data.slice(start, start + perPage))
   } catch (err) {
     console.error('[server]', err.message)
     res.status(500).json({ error: err.message })
